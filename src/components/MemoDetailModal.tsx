@@ -9,7 +9,7 @@ interface MemoDetailModalProps {
   isOpen: boolean
   onClose: () => void
   onEdit: (memo: Memo) => void
-  onDelete: (id: string) => void
+  onDelete: (id: string) => Promise<void>
 }
 
 export default function MemoDetailModal({
@@ -63,10 +63,15 @@ export default function MemoDetailModal({
     return colors[category as keyof typeof colors] || colors.other
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (window.confirm('정말로 이 메모를 삭제하시겠습니까?')) {
-      onDelete(memo.id)
-      onClose()
+      try {
+        await onDelete(memo.id)
+        onClose()
+      } catch (error) {
+        console.error('Failed to delete memo:', error)
+        alert('메모 삭제에 실패했습니다. 다시 시도해주세요.')
+      }
     }
   }
 

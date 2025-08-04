@@ -12,7 +12,7 @@ import {
 interface MemoFormProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: MemoFormData) => void
+  onSubmit: (data: MemoFormData) => Promise<void>
   editingMemo?: Memo | null
 }
 
@@ -29,6 +29,7 @@ export default function MemoForm({
     tags: [],
   })
   const [tagInput, setTagInput] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // 편집 모드일 때 폼 데이터 설정
   useEffect(() => {
@@ -50,14 +51,23 @@ export default function MemoForm({
     setTagInput('')
   }, [editingMemo, isOpen])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title.trim() || !formData.content.trim()) {
       alert('제목과 내용을 모두 입력해주세요.')
       return
     }
-    onSubmit(formData)
-    onClose()
+    
+    setIsSubmitting(true)
+    try {
+      await onSubmit(formData)
+      onClose()
+    } catch (error) {
+      console.error('Failed to submit memo:', error)
+      alert('메모 저장에 실패했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleAddTag = () => {
@@ -258,9 +268,13 @@ export default function MemoForm({
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
-                {editingMemo ? '수정하기' : '저장하기'}
+                {isSubmitting 
+                  ? '저장 중...' 
+                  : editingMemo ? '수정하기' : '저장하기'
+                }
               </button>
             </div>
           </form>
